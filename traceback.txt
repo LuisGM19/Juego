@@ -1,0 +1,26 @@
+﻿I'm sorry, but an uncaught exception occurred.
+
+While running game code:
+  File "game/navigation.rpy", line 343, in script
+    python:
+  File "game/navigation.rpy", line 346, in <module>
+    renpy.scene("expression", bg_image)
+TypeError: scene() takes from 0 to 1 positional arguments but 2 were given
+
+-- Full Traceback ------------------------------------------------------------
+
+Full traceback:
+  File "game/navigation.rpy", line 343, in script
+    python:
+  File "C:\Users\Public\Documents\juego\renpy-8.3.6-sdk\renpy\ast.py", line 834, in execute
+    renpy.python.py_exec_bytecode(self.code.bytecode, self.hide, store=self.store)
+  File "C:\Users\Public\Documents\juego\renpy-8.3.6-sdk\renpy\python.py", line 1184, in py_exec_bytecode
+    exec(bytecode, globals, locals)
+  File "game/navigation.rpy", line 346, in <module>
+    renpy.scene("expression", bg_image)
+TypeError: scene() takes from 0 to 1 positional arguments but 2 were given
+
+Windows-10-10.0.26100 AMD64
+Ren'Py 8.3.6.25022803
+Una nueva vida 1.0
+Sun Aug 10 13:46:03 2025

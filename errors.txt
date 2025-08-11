@@ -1,0 +1,10 @@
+﻿I'm sorry, but errors were detected in your script. Please correct the
+errors listed below, and try again.
+
+
+File "game/navigation.rpy", line 460: Line is indented, but the preceding textbutton statement does not expect a block. Please check this line's indentation. You may have forgotten a colon (:).
+    hbox:
+    ^
+
+Ren'Py Version: Ren'Py 8.3.6.25022803
+Sun Aug 10 13:06:31 2025
