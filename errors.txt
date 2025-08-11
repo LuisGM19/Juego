@@ -2,9 +2,9 @@
 errors listed below, and try again.
 
 
-File "game/navigation.rpy", line 460: Line is indented, but the preceding textbutton statement does not expect a block. Please check this line's indentation. You may have forgotten a colon (:).
-    hbox:
-    ^
+File "game/time_system.rpy", line 369: a non-constant keyword argument like 'tooltip next_period' is not allowed after a python block.
+    tooltip next_period
+                       ^
 
 Ren'Py Version: Ren'Py 8.3.6.25022803
-Sun Aug 10 13:06:31 2025
+Mon Aug 11 00:25:42 2025
