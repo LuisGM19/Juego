@@ -1,5 +1,5 @@
-# characters.rpy - Sistema de personajes mejorado
-# Version 2.0 - Organización optimizada con configuración centralizada
+# characters.rpy - Sistema de personajes simplificado
+# Version 2.1 - Sin estadísticas ni sistema de relaciones
 
 ################################################################################
 ## Configuración de colores y estilos
@@ -95,14 +95,6 @@ default player_transformed = False
 default intro_completed = False  # Flag principal de introducción completada
 default tutorial_completed = False
 
-# Estadísticas del jugador (para futuro sistema de stats)
-default player_stats = {
-    "fuerza": 5,
-    "inteligencia": 5,
-    "carisma": 5,
-    "resistencia": 5
-}
-
 # Inventario básico (para futuro sistema de inventario)
 default player_inventory = []
 default player_money = 100
@@ -148,12 +140,6 @@ init python:
         player_gender = new_gender
         player_transformed = (new_gender == "female")
         update_thoughts_name()
-        
-        # Aquí podrías agregar cambios en stats u otros efectos
-        if player_transformed:
-            # Ejemplo: modificar stats tras transformación
-            player_stats["fuerza"] -= 2
-            player_stats["carisma"] += 3
     
     def get_current_player_character():
         """
@@ -205,57 +191,3 @@ define player_whisper = DynamicCharacter(
     what_italic=True,
     what_alpha=0.8
 )
-
-################################################################################
-## Sistema de relaciones (preparación para futuro)
-################################################################################
-
-# Diccionario de relaciones con otros personajes
-default character_relationships = {
-    "vendedor": 0,  # -100 a 100
-    # Agregar más personajes según se introduzcan
-}
-
-# Función para modificar relaciones
-init python:
-    def modify_relationship(character, amount):
-        """
-        Modifica la relación con un personaje
-        """
-        global character_relationships
-        
-        if character in character_relationships:
-            old_value = character_relationships[character]
-            new_value = max(-100, min(100, old_value + amount))
-            character_relationships[character] = new_value
-            
-            # Mostrar notificación si es un cambio significativo
-            if abs(amount) >= 10:
-                if amount > 0:
-                    renpy.notify(f"Relación con {character.title()} +{amount}")
-                else:
-                    renpy.notify(f"Relación con {character.title()} {amount}")
-    
-    def get_relationship_level(character):
-        """
-        Obtiene el nivel de relación con un personaje
-        """
-        if character not in character_relationships:
-            return "neutral"
-        
-        value = character_relationships[character]
-        
-        if value >= 75:
-            return "excelente"
-        elif value >= 50:
-            return "buena"
-        elif value >= 25:
-            return "amistosa"
-        elif value >= -25:
-            return "neutral"
-        elif value >= -50:
-            return "tensa"
-        elif value >= -75:
-            return "mala"
-        else:
-            return "hostil"

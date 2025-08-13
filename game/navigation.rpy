@@ -1,5 +1,5 @@
-# navigation.rpy - Sistema de navegación optimizado
-# Version 2.0 - Mejorado para mejor rendimiento y organización
+# navigation.rpy - Sistema de navegación simplificado
+# Version 2.1 - Sin menús de acciones por ahora
 
 ################################################################################
 ## Variables del sistema de navegación
@@ -11,11 +11,14 @@ default current_area = "casa"
 default previous_location = ""
 default previous_area = ""
 
+# Área visible en el mapa (puede ser diferente del área actual)
+default viewing_area = "casa"
+
 # Flags de disponibilidad de áreas
 default areas_unlocked = {
     "casa": True,
-    "escuela": False,
-    "ciudad": False
+    "escuela": True,
+    "ciudad": True
 }
 
 # Eventos activos por ubicación
@@ -35,29 +38,25 @@ default locations = {
                 "name": "Tu habitación",
                 "image": "images/locations/habitacion_dia.webp",
                 "description": "Tu espacio personal",
-                "available": True,
-                "actions": ["descansar", "estudiar", "cambiar_ropa"]
+                "available": True
             },
             "cocina": {
                 "name": "Cocina",
                 "image": "images/locations/cocina_dia.webp",
                 "description": "Donde se preparan los alimentos",
-                "available": True,
-                "actions": ["cocinar", "comer", "beber"]
+                "available": True
             },
             "sala": {
                 "name": "Sala",
                 "image": "images/locations/sala_dia.webp",
                 "description": "Área común de la casa",
-                "available": True,
-                "actions": ["ver_tv", "descansar", "leer"]
+                "available": True
             },
             "baño": {
                 "name": "Baño",
                 "image": "images/locations/baño_dia.webp",
                 "description": "Para tu higiene personal",
-                "available": True,
-                "actions": ["ducharse", "arreglarse"]
+                "available": True
             }
         }
     },
@@ -70,22 +69,19 @@ default locations = {
                 "name": "Pasillo",
                 "image": "images/locations/pasillo_escuela_dia.webp",
                 "description": "Pasillo principal de la escuela",
-                "available": True,
-                "actions": ["caminar", "hablar", "explorar"]
+                "available": True
             },
             "salon_clases": {
                 "name": "Salón de clases",
                 "image": "images/locations/salon_clases_dia.webp",
                 "description": "Donde tomas tus clases",
-                "available": True,
-                "actions": ["estudiar", "atender_clase", "hablar_compañeros"]
+                "available": True
             },
             "entrada_escuela": {
                 "name": "Entrada",
                 "image": "images/locations/entrada_escuela_dia.webp",
                 "description": "Entrada principal de la escuela",
-                "available": True,
-                "actions": ["esperar", "salir", "entrar"]
+                "available": True
             }
         }
     },
@@ -98,15 +94,13 @@ default locations = {
                 "name": "Centro comercial",
                 "image": "images/locations/centro_comercial_dia.webp",
                 "description": "Lugar para comprar y socializar",
-                "available": True,
-                "actions": ["comprar", "comer", "socializar"]
+                "available": True
             },
             "tienda": {
                 "name": "Tienda",
                 "image": "images/locations/tienda_dia.webp",
                 "description": "Tienda de conveniencia",
-                "available": True,
-                "actions": ["comprar_comida", "comprar_items"]
+                "available": True
             }
         }
     }
@@ -174,6 +168,17 @@ init python:
         if area_id in areas_unlocked:
             areas_unlocked[area_id] = True
             renpy.notify(f"¡Nueva área desbloqueada: {locations[area_id]['name']}!")
+            return True
+        return False
+    
+    def unlock_all_areas():
+        """
+        Desbloquea todas las áreas (útil para testing)
+        """
+        global areas_unlocked
+        for area in areas_unlocked:
+            areas_unlocked[area] = True
+        renpy.notify("¡Todas las áreas desbloqueadas!")
     
     def check_location_events(location_id):
         """
@@ -260,6 +265,9 @@ screen navigation_menu():
     # Fondo oscuro
     add "#000000aa"
     
+    # Sincronizar área visible con área actual al abrir
+    on "show" action SetVariable("viewing_area", current_area)
+    
     # Panel principal
     frame:
         xalign 0.5
@@ -311,7 +319,14 @@ screen navigation_header():
                 xalign 1.0
                 text "Ubicación actual:" size 20 color "#95a5a6"
                 $ area_name = locations[current_area]["name"]
-                $ room_name = locations[current_area]["rooms"][current_location]["name"]
+                # Verificar si la ubicación actual existe en el área actual
+                python:
+                    if current_location in locations[current_area]["rooms"]:
+                        room_name = locations[current_area]["rooms"][current_location]["name"]
+                    else:
+                        # Si no existe, usar la primera ubicación del área
+                        first_room = list(locations[current_area]["rooms"].keys())[0]
+                        room_name = "No definida"
                 text "[area_name] - [room_name]" size 24 color "#ffffff"
 
 screen area_tabs():
@@ -322,7 +337,7 @@ screen area_tabs():
         xfill True
         
         for area_id, area_data in locations.items():
-            $ is_current = (current_area == area_id)
+            $ is_viewing = (viewing_area == area_id)
             $ is_unlocked = areas_unlocked.get(area_id, False)
             
             button:
@@ -330,13 +345,14 @@ screen area_tabs():
                 ysize 50
                 
                 if is_unlocked:
-                    if is_current:
+                    if is_viewing:
                         background "#3498db"
                     else:
                         background "#34495e"
                         hover_background "#4a5f7a"
                     
-                    action SetVariable("current_area", area_id)
+                    # Solo cambiar el área que estamos viendo, no la ubicación actual
+                    action SetVariable("viewing_area", area_id)
                 else:
                     background "#2c3e50"
                     action NullAction()
@@ -371,34 +387,34 @@ screen location_grid():
                 spacing 20
                 xfill True
                 
-                $ current_rooms = locations[current_area]["rooms"]
+                $ current_rooms = locations[viewing_area]["rooms"]
                 
                 for room_id, room_data in current_rooms.items():
-                    $ is_current = (room_id == current_location)
-                    $ is_available = is_location_available(room_id, current_area)
+                    # Solo marcar como "actual" si estamos en esta área Y ubicación
+                    $ is_current = (room_id == current_location and viewing_area == current_area)
+                    $ is_available = is_location_available(room_id, viewing_area)
                     
-                    use location_card(room_id, room_data, is_current, is_available)
+                    use room_button(room_id, room_data, is_current, is_available)
                 
                 # Rellenar espacios vacíos si es necesario
                 for i in range(9 - len(current_rooms)):
                     null
 
-screen location_card(room_id, room_data, is_current, is_available):
-    # Tarjeta individual de ubicación
-    
+screen room_button(room_id, room_data, is_current, is_available):
     button:
         xsize 420
         ysize 280
         
         if is_current:
             background "#27ae60"
+            action NullAction()
         elif is_available:
             background "#34495e"
             hover_background "#4a5f7a"
             action [
-                Function(change_location, room_id, current_area),
+                Function(change_location, room_id, viewing_area),
                 Hide("navigation_menu"),
-                Jump(f"location_{room_id}")
+                Jump("location_" + room_id)
             ]
         else:
             background "#1a1a1a"
@@ -409,19 +425,14 @@ screen location_card(room_id, room_data, is_current, is_available):
             xfill True
             yfill True
             
-            # Imagen de la ubicación
             frame:
                 xsize 400
                 ysize 200
                 xalign 0.5
                 background "#000000"
                 
-                $ img_path = get_location_image_path(room_id, current_area)
-                
-                # Debug: mostrar la ruta que está buscando
                 python:
-                    if config.developer:
-                        print(f"Buscando imagen para {room_id}: {img_path}")
+                    img_path = get_location_image_path(room_id, viewing_area)
                 
                 if img_path and renpy.loadable(img_path):
                     add img_path:
@@ -433,10 +444,7 @@ screen location_card(room_id, room_data, is_current, is_available):
                         xalign 0.5
                         yalign 0.5
                         text "Sin imagen" size 16 xalign 0.5 color "#666666"
-                        if config.developer and img_path:
-                            text f"[{img_path}]" size 10 xalign 0.5 color "#444444"
             
-            # Información de la ubicación
             vbox:
                 xalign 0.5
                 spacing 2
@@ -492,76 +500,124 @@ label location_tu_habitacion:
     
     narrator "Estás en tu habitación."
     
-    menu room_menu_habitacion:
-        "¿Qué quieres hacer?"
-        
-        "Descansar":
-            call rest_action
-            jump location_tu_habitacion  # Volver a cargar la ubicación para actualizar imagen
-            
-        "Estudiar":
-            call study_action
-            jump location_tu_habitacion  # Volver a cargar la ubicación
-            
-        "Abrir el mapa":
-            show screen navigation_menu
-            
-        "Continuar":
-            pass
-    
-    jump room_menu_habitacion
+    # Esperar sin menú
+    jump navigation_wait
 
 label location_cocina:
-    scene location_kitchen
+    python:
+        if current_time_period == "noche":
+            bg_image = "images/locations/cocina_noche.webp"
+        elif current_time_period == "tarde":
+            bg_image = "images/locations/cocina_tarde.webp"
+        else:
+            bg_image = "images/locations/cocina_dia.webp"
+    
+    scene expression bg_image
     with fade
     
     narrator "Estás en la cocina."
     jump navigation_wait
 
 label location_sala:
-    scene location_living_room
+    python:
+        if current_time_period == "noche":
+            bg_image = "images/locations/sala_noche.webp"
+        elif current_time_period == "tarde":
+            bg_image = "images/locations/sala_tarde.webp"
+        else:
+            bg_image = "images/locations/sala_dia.webp"
+    
+    scene expression bg_image
     with fade
     
     narrator "Estás en la sala."
     jump navigation_wait
 
 label location_baño:
-    scene black
+    python:
+        if current_time_period == "noche":
+            bg_image = "images/locations/baño_noche.webp"
+        elif current_time_period == "tarde":
+            bg_image = "images/locations/baño_tarde.webp"
+        else:
+            bg_image = "images/locations/baño_dia.webp"
+    
+    scene expression bg_image
     with fade
     
     narrator "Estás en el baño."
     jump navigation_wait
 
 label location_pasillo_escuela:
-    scene black
+    python:
+        if current_time_period == "noche":
+            bg_image = "images/locations/pasillo_escuela_noche.webp"
+        elif current_time_period == "tarde":
+            bg_image = "images/locations/pasillo_escuela_tarde.webp"
+        else:
+            bg_image = "images/locations/pasillo_escuela_dia.webp"
+    
+    scene expression bg_image
     with fade
     
     narrator "Estás en el pasillo de la escuela."
     jump navigation_wait
 
 label location_salon_clases:
-    scene black
+    python:
+        if current_time_period == "noche":
+            bg_image = "images/locations/salon_clases_noche.webp"
+        elif current_time_period == "tarde":
+            bg_image = "images/locations/salon_clases_tarde.webp"
+        else:
+            bg_image = "images/locations/salon_clases_dia.webp"
+    
+    scene expression bg_image
     with fade
     
     narrator "Estás en el salón de clases."
     jump navigation_wait
 
 label location_entrada_escuela:
-    scene black
+    python:
+        if current_time_period == "noche":
+            bg_image = "images/locations/entrada_escuela_noche.webp"
+        elif current_time_period == "tarde":
+            bg_image = "images/locations/entrada_escuela_tarde.webp"
+        else:
+            bg_image = "images/locations/entrada_escuela_dia.webp"
+    
+    scene expression bg_image
     with fade
     
     narrator "Estás en la entrada de la escuela."
     jump navigation_wait
 
 label location_centro_comercial:
-    scene black
+    python:
+        if current_time_period == "noche":
+            bg_image = "images/locations/centro_comercial_noche.webp"
+        elif current_time_period == "tarde":
+            bg_image = "images/locations/centro_comercial_tarde.webp"
+        else:
+            bg_image = "images/locations/centro_comercial_dia.webp"
+    
+    scene expression bg_image
     with fade
     
     narrator "Estás en el centro comercial."
     jump navigation_wait
 
 label location_tienda:
-    scene black
+    python:
+        if current_time_period == "noche":
+            bg_image = "images/locations/tienda_noche.webp"
+        elif current_time_period == "tarde":
+            bg_image = "images/locations/tienda_tarde.webp"
+        else:
+            bg_image = "images/locations/tienda_dia.webp"
+    
+    scene expression bg_image
     with fade
     
     narrator "Estás en la tienda."
@@ -576,14 +632,3 @@ label navigation_wait:
     $ renpy.pause(hard=True)
     
     jump navigation_wait
-
-# Acciones básicas
-label rest_action:
-    narrator "Descansas un poco..."
-    $ advance_time()
-    return
-
-label study_action:
-    narrator "Estudias durante una hora..."
-    $ player_stats["inteligencia"] += 1
-    return

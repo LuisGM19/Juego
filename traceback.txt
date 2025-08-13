@@ -1,22 +1,36 @@
 ﻿I'm sorry, but an uncaught exception occurred.
 
-While running game code:
-  File "game/navigation.rpy", line 493, in script
-    jump room_menu_habitacion
-ScriptError: could not find label 'room_menu_habitacion'.
+After initialization, but before game start.
+  File "game/navigation.rpy", line 403, in prepare_screen
+    screen location_card(room_id, room_data, is_current, is_available):
+  File "game/navigation.rpy", line 403, in prepare
+    screen location_card(room_id, room_data, is_current, is_available):
+  File "game/navigation.rpy", line 406, in prepare
+    button:
+Exception: Properties are not allowed here.
 
 -- Full Traceback ------------------------------------------------------------
 
 Full traceback:
-  File "game/navigation.rpy", line 493, in script
-    jump room_menu_habitacion
-  File "C:\Users\Public\Documents\juego\renpy-8.3.6-sdk\renpy\ast.py", line 1712, in execute
-    rv = renpy.game.script.lookup(target)
-  File "C:\Users\Public\Documents\juego\renpy-8.3.6-sdk\renpy\script.py", line 1103, in lookup
-    raise ScriptError("could not find label '%s'." % str(original))
-ScriptError: could not find label 'room_menu_habitacion'.
+  File "C:\Users\Public\Documents\juego\renpy-8.3.6-sdk\renpy\bootstrap.py", line 359, in bootstrap
+    renpy.main.main()
+  File "C:\Users\Public\Documents\juego\renpy-8.3.6-sdk\renpy\main.py", line 652, in main
+    run(restart)
+  File "C:\Users\Public\Documents\juego\renpy-8.3.6-sdk\renpy\main.py", line 94, in run
+    renpy.display.screen.prepare_screens()
+  File "C:\Users\Public\Documents\juego\renpy-8.3.6-sdk\renpy\display\screen.py", line 1027, in prepare_screens
+    s.ast.prepare_screen()
+  File "game/navigation.rpy", line 403, in prepare_screen
+    screen location_card(room_id, room_data, is_current, is_available):
+  File "game/navigation.rpy", line 403, in prepare
+    screen location_card(room_id, room_data, is_current, is_available):
+  File "game/navigation.rpy", line 406, in prepare
+    button:
+  File "C:\Users\Public\Documents\juego\renpy-8.3.6-sdk\renpy\sl2\slast.py", line 481, in prepare
+    raise Exception("Properties are not allowed here.")
+Exception: Properties are not allowed here.
 
 Windows-10-10.0.26100 AMD64
 Ren'Py 8.3.6.25022803
 Una nueva vida 1.0
-Mon Aug 11 00:29:09 2025
+Tue Aug 12 14:43:38 2025

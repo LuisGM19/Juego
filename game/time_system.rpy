@@ -1,5 +1,5 @@
-# time_system.rpy - Sistema de tiempo optimizado
-# Version 2.0 - Mejorado con eventos temporales y mejor integración
+# time_system.rpy - Sistema de tiempo simplificado y corregido
+# Version 2.2 - Con actualización automática de imágenes
 
 ################################################################################
 ## Variables del sistema de tiempo
@@ -10,13 +10,13 @@ default current_day_number = 1
 default current_day_name = "Lunes"
 default current_time_period = "mañana"
 
+# Variables adicionales para compatibilidad
+default current_time = "mañana"  # Duplicado para compatibilidad
+default current_day = "Lunes"    # Duplicado para compatibilidad
+
 # Configuración del calendario
 default days_of_week = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
 default time_periods = ["mañana", "tarde", "noche"]
-
-# Eventos y actividades por tiempo
-default time_events = {}
-default daily_activities_done = []
 
 # Estadísticas de tiempo
 default total_days_played = 1
@@ -45,7 +45,8 @@ init python:
         Avanza el tiempo por el número de períodos especificado
         """
         global current_time_period, current_day_number, current_day_name
-        global time_advanced_count, total_days_played, daily_activities_done
+        global time_advanced_count, total_days_played
+        global current_time, current_day
         
         for i in range(periods):
             # Obtener índice actual
@@ -57,17 +58,18 @@ init python:
             else:
                 # Avanzar al siguiente período
                 current_time_period = time_periods[current_period_index + 1]
+                current_time = current_time_period  # Actualizar duplicado
                 time_advanced_count += 1
         
         # Actualizar variables de navegación
         update_navigation_time()
         
-        # Verificar eventos temporales
-        check_time_events()
-        
         # Mostrar notificación si se solicita
         if show_notification:
             show_time_notification()
+        
+        # IMPORTANTE: Actualizar la imagen de la ubicación actual
+        refresh_current_location()
         
         return True
     
@@ -76,7 +78,7 @@ init python:
         Avanza al siguiente día
         """
         global current_day_number, current_day_name, current_time_period
-        global total_days_played, daily_activities_done
+        global total_days_played, current_time, current_day
         
         # Avanzar día
         current_day_number += 1
@@ -85,34 +87,39 @@ init python:
         # Calcular día de la semana
         day_index = (current_day_number - 1) % 7
         current_day_name = days_of_week[day_index]
+        current_day = current_day_name  # Actualizar duplicado
         
         # Resetear al período de mañana
         current_time_period = "mañana"
-        
-        # Limpiar actividades diarias
-        daily_activities_done = []
-        
-        # Ejecutar eventos de nuevo día
-        execute_new_day_events()
-        
-        # Verificar fechas especiales
-        check_special_dates()
+        current_time = "mañana"  # Actualizar duplicado
     
     def set_time(day=None, period=None):
         """
         Establece el tiempo a un día y período específico
         """
         global current_day_number, current_day_name, current_time_period
+        global current_time, current_day
         
         if day is not None:
             current_day_number = day
             day_index = (day - 1) % 7
             current_day_name = days_of_week[day_index]
+            current_day = current_day_name  # Actualizar duplicado
         
         if period is not None and period in time_periods:
             current_time_period = period
+            current_time = period  # Actualizar duplicado
         
         update_navigation_time()
+        refresh_current_location()
+    
+    def refresh_current_location():
+        """
+        Actualiza la imagen de la ubicación actual según el nuevo tiempo
+        """
+        if hasattr(store, 'current_location'):
+            # Saltar al label de la ubicación actual para refrescar la imagen
+            renpy.jump(f"location_{store.current_location}")
     
     def get_time_display():
         """
@@ -152,86 +159,6 @@ init python:
             "noche": "#191970"     # Azul medianoche
         }
         return backgrounds.get(current_time_period, "#34495e")
-
-################################################################################
-## Sistema de eventos temporales
-################################################################################
-
-init python:
-    
-    def check_time_events():
-        """
-        Verifica y ejecuta eventos basados en el tiempo actual
-        """
-        global time_events
-        
-        # Crear clave para el tiempo actual
-        time_key = f"{current_day_name}_{current_time_period}"
-        
-        # Verificar eventos específicos del tiempo
-        if time_key in time_events:
-            for event in time_events[time_key]:
-                if should_trigger_event(event):
-                    renpy.call(event["label"])
-        
-        # Verificar eventos diarios
-        check_daily_events()
-    
-    def should_trigger_event(event):
-        """
-        Determina si un evento debe ejecutarse
-        """
-        # Verificar condiciones del evento
-        if "condition" in event:
-            return eval(event["condition"])
-        
-        # Verificar si es único y ya se ejecutó
-        if event.get("once", False):
-            if event["id"] in store.completed_events:
-                return False
-        
-        return True
-    
-    def check_daily_events():
-        """
-        Verifica eventos que ocurren todos los días a cierta hora
-        """
-        # Ejemplo: recordatorio de clases en días de semana
-        if current_day_name in ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"]:
-            if current_time_period == "mañana" and "clase_reminder" not in daily_activities_done:
-                daily_activities_done.append("clase_reminder")
-                renpy.notify("¡Es hora de ir a clases!")
-    
-    def execute_new_day_events():
-        """
-        Ejecuta eventos al comenzar un nuevo día
-        """
-        # Resetear energía del jugador (si implementas sistema de energía)
-        # store.player_energy = 100
-        
-        # Mostrar resumen del día anterior si es necesario
-        if total_days_played > 1:
-            renpy.notify(f"Día {current_day_number} - {current_day_name}")
-    
-    def register_time_event(day, period, label, event_id=None, once=False, condition=None):
-        """
-        Registra un nuevo evento temporal
-        """
-        global time_events
-        
-        time_key = f"{day}_{period}"
-        
-        if time_key not in time_events:
-            time_events[time_key] = []
-        
-        event = {
-            "label": label,
-            "id": event_id or label,
-            "once": once,
-            "condition": condition
-        }
-        
-        time_events[time_key].append(event)
 
 ################################################################################
 ## Funciones de utilidad
@@ -286,10 +213,8 @@ init python:
         """
         Actualiza las variables de tiempo en el sistema de navegación
         """
-        if hasattr(store, 'current_time'):
-            store.current_time = current_time_period
-        if hasattr(store, 'current_day'):
-            store.current_day = current_day_name
+        store.current_time = current_time_period
+        store.current_day = current_day_name
     
     def show_time_notification():
         """
@@ -327,7 +252,7 @@ screen time_button():
     $ bg_color = get_time_background() + "cc"  # Añadir transparencia
     $ bg_hover = get_time_background() + "ff"  # Opaco al hover
     
-    # Calcular el texto del tooltip antes del button
+    # Calcular el texto del tooltip
     if current_time_period == "mañana":
         $ tooltip_text = "Clic para avanzar a tarde"
     elif current_time_period == "tarde":
@@ -347,7 +272,12 @@ screen time_button():
         hover_background bg_hover
         padding (10, 5)
         
-        action Function(advance_time, 1, True)
+        # Acción mejorada que actualiza la ubicación
+        action [
+            Function(advance_time, 1, True),
+            If(hasattr(store, 'current_location'), 
+                Jump(f"location_{store.current_location}"))
+        ]
         tooltip tooltip_text
         
         hbox:
@@ -377,7 +307,7 @@ screen time_details():
         xsize 250
         ysize 150
         
-        background Frame("gui/frame/time_details.png", 10, 10)
+        background "#2c3e50"
         padding (15, 15)
         
         vbox:
@@ -437,7 +367,7 @@ screen time_skip_menu():
         xsize 400
         ysize 300
         
-        background Frame("gui/frame/skip_menu.png", 15, 15)
+        background "#2c3e50"
         padding (20, 20)
         
         vbox:
@@ -531,159 +461,3 @@ init python:
                         return i
         
         return 0
-
-################################################################################
-## Labels para testing y eventos de tiempo
-################################################################################
-
-label test_time_system:
-    """
-    Label de prueba para el sistema de tiempo
-    """
-    
-    scene black
-    with fade
-    
-    narrator "Probando el sistema de tiempo..."
-    
-    python:
-        # Resetear tiempo
-        set_time(1, "mañana")
-    
-    narrator "Tiempo actual: [current_day_name], [current_time_period] (Día [current_day_number])"
-    
-    menu time_test_menu:
-        "¿Qué quieres probar?"
-        
-        "Avanzar una hora":
-            $ advance_time(1, True)
-            narrator "El tiempo ha avanzado."
-            jump time_test_menu
-        
-        "Saltar al siguiente día":
-            $ skip_to_next_day()
-            narrator "Has saltado al siguiente día."
-            jump time_test_menu
-        
-        "Ver menú de salto de tiempo":
-            show screen time_skip_menu
-            jump time_test_menu
-        
-        "Verificar si es fin de semana":
-            if is_weekend():
-                narrator "Sí, es fin de semana."
-            else:
-                narrator "No, es un día de semana."
-            jump time_test_menu
-        
-        "Terminar prueba":
-            pass
-    
-    narrator "Prueba completada."
-    return
-
-# Eventos de ejemplo
-label morning_routine:
-    """
-    Rutina de mañana automática
-    """
-    narrator "Es un nuevo día..."
-    
-    if is_school_day():
-        narrator "Hoy tienes clases."
-    else:
-        narrator "Hoy es fin de semana, puedes relajarte."
-    
-    return
-
-label evening_reflection:
-    """
-    Reflexión de la tarde
-    """
-    narrator "El día está llegando a su fin..."
-    
-    if time_advanced_count > 5:
-        narrator "Has estado muy activo hoy."
-    
-    return
-
-################################################################################
-## Integración con el sistema de guardado
-################################################################################
-
-init python:
-    
-    # Guardar información de tiempo en los saves
-    def time_save_data():
-        """
-        Prepara datos de tiempo para guardar
-        """
-        return {
-            "day": current_day_number,
-            "day_name": current_day_name,
-            "period": current_time_period,
-            "total_days": total_days_played,
-            "events": time_events
-        }
-    
-    # Restaurar información de tiempo desde saves
-    def time_load_data(data):
-        """
-        Restaura datos de tiempo desde un save
-        """
-        global current_day_number, current_day_name, current_time_period
-        global total_days_played, time_events
-        
-        if data:
-            current_day_number = data.get("day", 1)
-            current_day_name = data.get("day_name", "Lunes")
-            current_time_period = data.get("period", "mañana")
-            total_days_played = data.get("total_days", 1)
-            time_events = data.get("events", {})
-            
-            update_navigation_time()
-
-################################################################################
-## Configuración de ciclos de tiempo especiales
-################################################################################
-
-# Definir eventos especiales por fecha
-default special_dates = {
-    7: "Primera semana completada",
-    14: "Dos semanas en el juego",
-    30: "Un mes jugando",
-    100: "¡Día 100!"
-}
-
-init python:
-    
-    def check_special_dates():
-        """
-        Verifica si es una fecha especial
-        """
-        # Verificar que las variables existan antes de usarlas
-        if not hasattr(store, 'current_day_number') or not hasattr(store, 'special_dates'):
-            return
-            
-        if current_day_number in special_dates:
-            message = special_dates[current_day_number]
-            renpy.notify(f"¡Logro desbloqueado: {message}!")
-            
-            # Podrías otorgar recompensas aquí
-            if current_day_number == 7:
-                if hasattr(store, 'player_money'):
-                    store.player_money += 100
-            elif current_day_number == 30:
-                if hasattr(store, 'player_money'):
-                    store.player_money += 500
-    
-    def safe_check_special_dates():
-        """
-        Wrapper seguro para verificar fechas especiales
-        """
-        try:
-            if hasattr(store, 'current_day_number') and hasattr(store, 'special_dates'):
-                if store.current_day_number in store.special_dates:
-                    check_special_dates()
-        except:
-            pass
