@@ -2,16 +2,13 @@
 errors listed below, and try again.
 
 
-File "game/navigation.rpy", line 416: a non-constant keyword argument like 'action [
-                Function(change_location, room_id, viewing_area),
-                Hide("navigation_menu"),
-                Jump(target_label)
-            ]' is not allowed after a python block.
-    action [
-                    Function(change_location, room_id, viewing_area),
-                    Hide("navigation_menu"),
-                    Jump(target_label)
-                ]
+File "game/phone_system.rpy", line 365: The if statement is not a valid child of the button statement.
+    action Function(close_phone_app) if current_phone_app else NullAction()
+                                       ^
+
+File "game/phone_system.rpy", line 481: 'alpha' is not a keyword argument or valid child of the text statement.
+    text "👤" size 30 xalign 0.5 yalign 0.5 alpha 0.3
+                                                ^
 
 Ren'Py Version: Ren'Py 8.3.6.25022803
-Tue Aug 12 14:46:07 2025
+Wed Aug 13 15:20:10 2025

@@ -360,8 +360,12 @@ label main_game:
     scene black
     with fade
     
+    # Activar el sistema de teléfono después de la introducción
+    call enable_phone_system
+    
     narrator "Ahora puedes explorar libremente usando el botón de mapa."
     narrator "Haz clic en el ícono 🗺️ en la esquina superior derecha para navegar."
+    narrator "También tienes acceso a tu teléfono con el botón 📱."
     
     # Mostrar interfaces del juego
     show screen navigation_button
